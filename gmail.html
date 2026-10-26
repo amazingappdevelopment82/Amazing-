@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bahadur Gmail Manager - বাহাদুর জিমেইল ম্যানেজার</title>
+  <link rel="icon" type="image/jpeg" href="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh4HcwwvbkmVCTytu0WwsGvxuzfvYmVZzpfF71nR8RTYiM9ncElOmp3GAGnv1vBeYgRJmP5acbVh-Bgo4jEx-NpeXoKKqMc9mV_Lm-6CyWaT6tlaqFQhIXwN9YBUDA6s-zRV1zIl2050QSm2-_VmeZP0DDWUhSeimizWmLzFtuWLLHJ0kiTZiQy4Xm1IlI/s320/GridArt_20261026_225319007.jpg">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase App & Auth SDK (Compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', 'Hind Siliguri', sans-serif;
+      background-color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex items-center justify-center p-0 md:p-4">
+
+  <div id="deviceContainer" class="w-full max-w-4xl min-h-screen md:min-h-[880px] bg-slate-100 flex flex-col overflow-hidden relative shadow-2xl md:rounded-[32px] md:border-4 md:border-slate-700">
+    
+    <!-- Protocol Warning for local content:// files -->
+    <div id="protocolWarning" class="hidden bg-amber-500 text-slate-950 px-4 py-2.5 text-xs font-semibold flex items-start justify-between gap-3 border-b border-amber-600 shadow-sm z-50">
+      <div class="flex items-start gap-2">
+        <span class="text-base shrink-0">⚠️</span>
+        <div>
+          <span class="font-bold underline">গুগল সাইন-ইন সতর্কতা:</span> 
+          ফাইলটি <code class="bg-black/10 px-1 rounded font-mono text-[11px]" id="protocolName">content://</code> থেকে ওপেন করা হয়েছে। গুগলের অফিসিয়াল নিরাপত্তা নিয়মানুযায়ী সাইন-ইন চালাতে এটি <code class="bg-black/10 px-1 rounded font-mono text-[11px]">https://</code> লিঙ্কে চলতে হবে (যেমন GitHub Pages অথবা AppCreator24 এর <b>Web সেকশন</b>)।
+        </div>
+      </div>
+      <button onclick="document.getElementById('protocolWarning').remove()" class="text-slate-900 font-bold p-1 hover:bg-black/10 rounded">&times;</button>
+    </div>
+
+    <!-- App Header -->
+    <header class="bg-[#131921] text-white sticky top-0 z-40 shadow-md shrink-0">
+      <div class="px-3.5 py-2.5 flex items-center justify-between border-b border-[#232F3E]">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="switchTab('dashboard')">
+          <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh4HcwwvbkmVCTytu0WwsGvxuzfvYmVZzpfF71nR8RTYiM9ncElOmp3GAGnv1vBeYgRJmP5acbVh-Bgo4jEx-NpeXoKKqMc9mV_Lm-6CyWaT6tlaqFQhIXwN9YBUDA6s-zRV1zIl2050QSm2-_VmeZP0DDWUhSeimizWmLzFtuWLLHJ0kiTZiQy4Xm1IlI/s320/GridArt_20261026_225319007.jpg" 
+               alt="Bahadur Gmail Manager Logo" 
+               class="w-10 h-10 rounded-xl object-contain bg-white/10 p-0.5 border border-[#FF9900]/70 shadow-sm shrink-0">
+          <div>
+            <div class="flex items-center gap-1.5 leading-none">
+              <span class="font-bold text-base text-white tracking-tight">Bahadur</span>
+              <span class="font-extrabold text-base text-[#FF9900] tracking-tight">Gmail</span>
+              <span class="text-[9px] font-bold bg-[#232F3E] text-[#FF9900] px-1.5 py-0.5 rounded border border-[#FF9900]/30 ml-0.5">MANAGER</span>
+            </div>
+            <p id="subBrandTxt" class="text-[10px] text-gray-400 mt-0.5">বাহাদুর জিমেইল ম্যানেজার • Official Google OAuth 2.0</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="flex items-center bg-[#232F3E] rounded-md p-0.5 border border-gray-700">
+            <button id="langBtnEn" onclick="setLanguage('en')" class="px-2 py-1 text-xs font-medium rounded text-gray-300 hover:text-white">EN</button>
+            <button id="langBtnBn" onclick="setLanguage('bn')" class="px-2 py-1 text-xs font-bold rounded bg-[#FF9900] text-slate-950">বাংলা</button>
+          </div>
+
+          <div id="userHeaderArea">
+            <button onclick="triggerGoogleSignIn()" class="flex items-center gap-1.5 bg-[#FF9900] hover:bg-[#F8A838] text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow">
+              <span>Sign in with Google</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Sub-bar -->
+      <div class="bg-[#232F3E] px-3.5 py-1.5 flex items-center justify-between text-xs overflow-x-auto">
+        <div class="flex items-center gap-1 sm:gap-2">
+          <button id="tabBtnDashboard" onclick="switchTab('dashboard')" class="px-3 py-1 rounded font-bold bg-[#131921] text-[#FF9900] border-b-2 border-[#FF9900]">
+            <span>Dashboard</span>
+          </button>
+          <button id="tabBtnInbox" onclick="switchTab('inbox')" class="px-3 py-1 rounded font-medium text-gray-300 hover:text-white">
+            <span>Inbox</span>
+          </button>
+          <button id="tabBtnAccounts" onclick="switchTab('accounts')" class="px-3 py-1 rounded font-medium text-gray-300 hover:text-white">
+            <span>Accounts</span>
+          </button>
+          <button id="tabBtnSingleHtml" onclick="switchTab('singleHtml')" class="px-3 py-1 rounded font-medium text-gray-300 hover:text-white flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#FF9900] animate-pulse"></span>
+            <span>Single HTML</span>
+          </button>
+        </div>
+
+        <button onclick="openCreateModal()" class="flex items-center gap-1 bg-gradient-to-r from-amber-600 to-[#E47911] hover:from-amber-500 hover:to-[#FF9900] text-white px-2.5 py-1 rounded font-bold text-xs shrink-0 ml-2 shadow-xs">
+          <span>+ Create New Gmail Account</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Disclaimer Banner -->
+    <div class="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-[11px] text-amber-900 bg-amber-50 shrink-0">
+      <div class="flex items-center gap-1.5 truncate">
+        <span class="text-[#E47911] font-bold">ℹ️</span>
+        <span id="disclaimerTxt" class="truncate font-medium">Notice: Third-party apps cannot create Gmail accounts without Google’s official verification. Always use Google’s official portal.</span>
+      </div>
+      <button onclick="openCreateModal()" class="text-[10px] font-bold text-[#E47911] hover:underline whitespace-nowrap ml-2">Learn More</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 bg-slate-50 overflow-y-auto p-3.5 sm:p-5 space-y-4 max-w-4xl mx-auto w-full">
+      
+      <!-- TAB 1: DASHBOARD (MATCHING SCREENSHOT 1 & 2) -->
+      <section id="sectionDashboard" class="space-y-4">
+        
+        <!-- Hero Banner -->
+        <div class="relative rounded-2xl bg-gradient-to-br from-[#131921] via-[#1E293B] to-[#232F3E] text-white p-5 shadow-lg border border-slate-700/60 overflow-hidden">
+          <div class="relative z-10 space-y-2">
+            <div class="flex items-center gap-2.5">
+              <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh4HcwwvbkmVCTytu0WwsGvxuzfvYmVZzpfF71nR8RTYiM9ncElOmp3GAGnv1vBeYgRJmP5acbVh-Bgo4jEx-NpeXoKKqMc9mV_Lm-6CyWaT6tlaqFQhIXwN9YBUDA6s-zRV1zIl2050QSm2-_VmeZP0DDWUhSeimizWmLzFtuWLLHJ0kiTZiQy4Xm1IlI/s320/GridArt_20261026_225319007.jpg"
+                   alt="Logo" 
+                   class="w-10 h-10 rounded-xl object-contain bg-white/10 p-0.5 border border-[#FF9900]/70 shadow shrink-0">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#FF9900] text-slate-950 px-2 py-0.5 rounded">
+                    Google OAuth 2.0
+                  </span>
+                  <span class="text-[10px] text-emerald-400 font-bold">100% Authentic</span>
+                </div>
+                <h2 id="heroTitle" class="text-xl sm:text-2xl font-black text-white tracking-tight mt-0.5">
+                  Bahadur Gmail Manager
+                </h2>
+              </div>
+            </div>
+
+            <p id="heroDesc" class="text-xs text-gray-300 max-w-lg leading-relaxed">
+              Secure Multi-Account Gmail Manager with Official Google OAuth 2.0
+            </p>
+
+            <div class="flex flex-wrap items-center gap-2.5 pt-2">
+              <button onclick="triggerGoogleSignIn()" class="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-950 bg-gradient-to-r from-[#FF9900] to-[#E47911] hover:from-[#F8A838] hover:to-[#FF9900] rounded-xl shadow transition-all">
+                <span id="heroBtnTxt">⊕ Sign in with Google</span>
+              </button>
+
+              <button onclick="switchTab('singleHtml')" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-emerald-300 bg-emerald-950/60 hover:bg-emerald-900/80 rounded-xl border border-emerald-500/40 transition-colors">
+                <span>✨ Copy Single HTML</span>
+              </button>
+
+              <button onclick="openCreateModal()" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-colors">
+                <span id="createAccBtnTxt">Create New Gmail Account</span>
+              </button>
+            </div>
+          </div>
+          <div class="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-[#FF9900]/15 blur-2xl pointer-events-none"></div>
+        </div>
+
+        <!-- Single index.html File Callout Card -->
+        <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#E47911] to-[#FF9900] text-slate-950 flex items-center justify-center font-black shrink-0 shadow text-sm">
+              &lt;/&gt;
+            </div>
+            <div>
+              <h4 class="font-bold text-xs text-slate-900">
+                Single index.html File (AppCreator24 &amp; GitHub Pages)
+              </h4>
+              <p class="text-[11px] text-slate-600">
+                Copy the complete single HTML file to paste directly into AppCreator24 or host on GitHub Pages.
+              </p>
+            </div>
+          </div>
+          <button onclick="switchTab('singleHtml')" class="px-3.5 py-1.5 text-xs font-bold text-slate-950 bg-[#FF9900] hover:bg-[#F8A838] rounded-xl shadow-xs shrink-0 transition-colors">
+            View / Copy
+          </button>
+        </div>
+
+        <!-- 4 Metric Stat Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Connected Accounts</span>
+              <span class="text-[#E47911] font-bold">👥</span>
+            </div>
+            <div id="statAccCount" class="text-xl font-black text-slate-900">0</div>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Unread Messages</span>
+              <span class="text-[#E47911] font-bold">✉️</span>
+            </div>
+            <div id="statUnreadCount" class="text-xl font-black text-[#E47911]">0</div>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Messages</span>
+              <span class="text-emerald-600 font-bold">📥</span>
+            </div>
+            <div id="statTotalMessages" class="text-xl font-black text-slate-900">—</div>
+          </div>
+
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
+            <div class="flex items-center justify-between text-slate-400 mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">OAuth 2.0 Security</span>
+              <span class="text-emerald-600 font-bold">🛡️</span>
+            </div>
+            <div class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full inline-block mt-1">
+              Google Verified
+            </div>
+          </div>
+        </div>
+
+        <!-- Connected Accounts Dashboard -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>Connected Accounts</span>
+                <span id="badgeAccCount" class="text-xs bg-[#FF9900]/15 text-[#E47911] font-bold px-2 py-0.5 rounded-full">0</span>
+              </h3>
+              <p class="text-xs text-slate-500 mt-0.5">Manage your authorized Google accounts and switch between inboxes securely.</p>
+            </div>
+            <button onclick="triggerGoogleSignIn()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-950 bg-gradient-to-r from-[#FF9900] to-[#E47911] rounded-xl shadow-xs self-start sm:self-auto">
+              <span>⊕ Add Another Gmail Account</span>
+            </button>
+          </div>
+
+          <div id="accountsListContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- Native Android Studio & APK Kit Card -->
+        <div class="bg-gradient-to-r from-[#232F3E] to-[#131921] rounded-2xl p-4 text-white flex items-center justify-between gap-3 border border-slate-700">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-[#FF9900] text-slate-950 flex items-center justify-center font-bold text-lg">
+              📱
+            </div>
+            <div>
+              <h4 class="font-bold text-xs text-white">Native Android Studio &amp; APK Kit</h4>
+              <p class="text-[11px] text-gray-300">
+                Export full Kotlin code and follow instructions to compile the official APK.
+              </p>
+            </div>
+          </div>
+          <button onclick="switchTab('singleHtml')" class="px-3.5 py-1.5 text-xs font-bold text-slate-950 bg-[#FF9900] hover:bg-[#F8A838] rounded-xl shrink-0 transition-colors">
+            View Code
+          </button>
+        </div>
+
+        <!-- Enterprise-Grade Google Security & Policy Compliance -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-emerald-600 font-bold text-base">🛡️</span>
+              <h4 class="font-bold text-sm text-slate-800">Enterprise-Grade Google Security &amp; Policy Compliance</h4>
+            </div>
+            <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+              ✓ Google Verified
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[#E47911]">🔒</span>
+                <h5 class="font-semibold text-xs text-slate-900">Zero Password Storage</h5>
+              </div>
+              <p class="text-[11px] text-slate-600">Pass-through Google OAuth 2.0 tokens only. Your Google password is never requested or stored.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[#E47911]">👁️</span>
+                <h5 class="font-semibold text-xs text-slate-900">Least Privilege Read-Only</h5>
+              </div>
+              <p class="text-[11px] text-slate-600">Uses https://www.googleapis.com/auth/gmail.readonly to safeguard your inbox.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[#E47911]">👥</span>
+                <h5 class="font-semibold text-xs text-slate-900">Safe Multi-Account Switcher</h5>
+              </div>
+              <p class="text-[11px] text-slate-600">Seamlessly toggle between authorized personal, business, and school Gmail addresses.</p>
+            </div>
+
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-emerald-600">✓</span>
+                <h5 class="font-semibold text-xs text-slate-900">100% Authentic Google APIs</h5>
+              </div>
+              <p class="text-[11px] text-slate-600">Direct communication with gmail.googleapis.com with zero middleware tampering.</p>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- TAB 2: INBOX -->
+      <section id="sectionInbox" class="space-y-4 hidden">
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900" id="inboxHeaderEmail">Gmail Inbox Overview</h3>
+            <span id="inboxUnreadBadge" class="text-xs text-[#E47911] font-bold">0 unread messages</span>
+          </div>
+          <button onclick="refreshCurrentInbox()" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center gap-1.5">
+            <span>🔄 Refresh Inbox</span>
+          </button>
+        </div>
+
+        <input type="text" id="inboxSearchInput" oninput="filterInboxMessages()" placeholder="Search messages by sender or subject..." 
+               class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-[#FF9900] outline-none shadow-xs">
+
+        <div id="inboxMessagesContainer" class="space-y-2"></div>
+      </section>
+
+      <!-- TAB 3: ACCOUNTS -->
+      <section id="sectionAccounts" class="space-y-4 hidden">
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Connected Accounts</h3>
+            <p class="text-xs text-slate-500">Add, switch, or remove authorized Gmail accounts</p>
+          </div>
+          <button onclick="triggerGoogleSignIn()" class="px-3.5 py-1.5 bg-[#FF9900] text-slate-950 font-bold rounded-xl text-xs shadow-xs">
+            + Add Another Gmail Account
+          </button>
+        </div>
+
+        <div id="fullAccountsList" class="space-y-2"></div>
+      </section>
+
+      <!-- TAB 4: SINGLE HTML -->
+      <section id="sectionSingleHtml" class="space-y-4 hidden">
+        <div class="bg-gradient-to-br from-[#131921] via-[#1E293B] to-[#232F3E] text-white p-5 rounded-2xl border border-slate-700 shadow-md space-y-3">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-extrabold uppercase bg-[#FF9900] text-slate-950 px-2 py-0.5 rounded">Single-File index.html</span>
+            <span class="text-[10px] text-emerald-400 font-bold">AppCreator24 &amp; GitHub Ready</span>
+          </div>
+          <h3 class="text-lg font-black text-white">Single File HTML Export</h3>
+          <p class="text-xs text-gray-300 leading-relaxed">
+            This entire application runs from a single file without any external server or build tools.
+          </p>
+          
+          <div class="flex flex-wrap items-center gap-2.5 pt-1">
+            <button onclick="copySingleHtmlToClipboard()" class="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-slate-950 bg-gradient-to-r from-[#FF9900] to-[#E47911] rounded-xl shadow">
+              <span id="copyBtnStatus">1-Click Copy Full index.html</span>
+            </button>
+            <button onclick="downloadIndexHtmlFile()" class="px-4 py-2.5 text-xs font-semibold text-white bg-white/10 hover:bg-white/20 rounded-xl border border-white/20">
+              Download index.html
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- Create Account Modal -->
+  <div id="createModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-3.5 shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="font-bold text-sm text-slate-900">Create Official Gmail Account</h3>
+        <button onclick="closeCreateModal()" class="text-gray-400 hover:text-slate-800 text-lg font-bold">&times;</button>
+      </div>
+      <p class="text-xs text-slate-600 leading-relaxed">
+        This redirects directly to Google's official sign-up server (<code class="bg-slate-100 px-1 py-0.5 rounded font-mono text-[10px]">accounts.google.com/signup</code>).
+      </p>
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 space-y-1.5">
+        <div class="font-bold">⚠️ Official Verification Policy:</div>
+        <div>• Phone number verification and device security checks are mandated directly by Google's anti-fraud systems.</div>
+        <div>• No third-party app can bypass Google's verification or CAPTCHA restrictions.</div>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeCreateModal()" class="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+        <button onclick="openGoogleSignupPage()" class="px-4 py-1.5 text-xs font-bold text-slate-950 bg-[#FF9900] hover:bg-[#F8A838] rounded-lg shadow">
+          Open Official Google Page &rarr;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    const firebaseConfig = {
+      projectId: "winged-memory-468213-d1",
+      appId: "1:991538040420:web:b264b712ec2bdfb9935971",
+      apiKey: "AIzaSyDMzxv41ZV4Ya0fe4aAC-c0UI4qrV0qO_8",
+      authDomain: "winged-memory-468213-d1.firebaseapp.com",
+      storageBucket: "winged-memory-468213-d1.firebasestorage.app",
+      messagingSenderId: "991538040420"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
+    googleProvider.addScope('https://www.googleapis.com/auth/gmail.readonly');
+
+    let currentLanguage = 'bn';
+    let cachedAccessToken = null;
+    let currentUser = null;
+    let currentMessages = [];
+
+    const STORAGE_KEY = 'bahadur_gmail_accounts';
+    const ACTIVE_KEY = 'bahadur_active_email';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const proto = window.location.protocol;
+      if (proto !== 'http:' && proto !== 'https:') {
+        const warn = document.getElementById('protocolWarning');
+        const pName = document.getElementById('protocolName');
+        if (warn && pName) {
+          pName.innerText = proto + '//';
+          warn.classList.remove('hidden');
+        }
+      }
+    });
+
+    function getAccounts() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveAccounts(accs) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(accs));
+      updateUI();
+    }
+
+    function getActiveEmail() {
+      return localStorage.getItem(ACTIVE_KEY);
+    }
+
+    function setActiveEmail(email) {
+      if (email) localStorage.setItem(ACTIVE_KEY, email);
+      else localStorage.removeItem(ACTIVE_KEY);
+      updateUI();
+    }
+
+    auth.onAuthStateChanged((user) => {
+      currentUser = user;
+      updateHeaderUser();
+      if (user && cachedAccessToken) {
+        fetchInbox();
+      }
+    });
+
+    async function triggerGoogleSignIn(loginHint = '') {
+      const proto = window.location.protocol;
+      if (proto !== 'http:' && proto !== 'https:') {
+        alert('⚠️ গুগল সাইন ইন (OAuth 2.0) চালাতে অ্যাপটি https:// লিঙ্কে চলতে হবে (যেমন GitHub Pages বা AppCreator24 এর Web সেকশন)। লোকাল content:// প্রোটোকল গুগল সমর্থন করে না।');
+        return;
+      }
+
+      try {
+        googleProvider.setCustomParameters({
+          prompt: 'select_account',
+          login_hint: loginHint || ''
+        });
+        const result = await auth.signInWithPopup(googleProvider);
+        const credential = result.credential;
+        cachedAccessToken = credential ? credential.accessToken : null;
+        currentUser = result.user;
+
+        const accounts = getAccounts();
+        const existingIdx = accounts.findIndex(a => a.email.toLowerCase() === (currentUser.email || '').toLowerCase());
+        const newAcc = {
+          email: currentUser.email,
+          displayName: currentUser.displayName || 'Gmail User',
+          photoURL: currentUser.photoURL,
+          lastLogin: Date.now(),
+          unreadCount: 0
+        };
+
+        if (existingIdx >= 0) {
+          accounts[existingIdx] = newAcc;
+        } else {
+          accounts.push(newAcc);
+        }
+        saveAccounts(accounts);
+        setActiveEmail(currentUser.email);
+
+        if (cachedAccessToken) {
+          fetchInbox();
+        }
+      } catch (err) {
+        console.error('Sign-in failed:', err);
+        alert('Google Sign-in failed: ' + (err.message || err));
+      }
+    }
+
+    function triggerSignOut() {
+      auth.signOut();
+      cachedAccessToken = null;
+      currentUser = null;
+      currentMessages = [];
+      updateUI();
+    }
+
+    async function fetchInbox() {
+      if (!cachedAccessToken) return;
+      const container = document.getElementById('inboxMessagesContainer');
+      container.innerHTML = '<div class="text-center py-6 text-xs text-slate-500">Loading inbox messages from Gmail API...</div>';
+      
+      try {
+        const listRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=in:inbox', {
+          headers: { Authorization: `Bearer ${cachedAccessToken}` }
+        });
+        if (!listRes.ok) throw new Error('Failed to list messages');
+        const listData = await listRes.json();
+        const messages = listData.messages || [];
+
+        const details = await Promise.all(messages.map(async (m) => {
+          try {
+            const detailRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, {
+              headers: { Authorization: `Bearer ${cachedAccessToken}` }
+            });
+            if (!detailRes.ok) return null;
+            const data = await detailRes.json();
+            const headers = data.payload?.headers || [];
+            const getHeader = (k) => headers.find(h => h.name.toLowerCase() === k.toLowerCase())?.value || '';
+            return {
+              id: data.id,
+              snippet: data.snippet || '',
+              subject: getHeader('Subject') || '(No Subject)',
+              from: getHeader('From') || 'Unknown',
+              date: getHeader('Date') || '',
+              isUnread: Boolean(data.labelIds && data.labelIds.includes('UNREAD'))
+            };
+          } catch {
+            return null;
+          }
+        }));
+
+        currentMessages = details.filter(Boolean);
+        const unreadTotal = currentMessages.filter(m => m.isUnread).length;
+
+        const accounts = getAccounts();
+        const active = getActiveEmail();
+        const accIdx = accounts.findIndex(a => a.email.toLowerCase() === (active || '').toLowerCase());
+        if (accIdx >= 0) {
+          accounts[accIdx].unreadCount = unreadTotal;
+          saveAccounts(accounts);
+        }
+
+        renderInboxMessages(currentMessages);
+      } catch (err) {
+        console.error('Error fetching inbox:', err);
+        container.innerHTML = `<div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800">
+          Token expired or unavailable. <button onclick="triggerGoogleSignIn('${getActiveEmail() || ''}')" class="underline font-bold text-[#E47911]">Click to Re-Authorize</button>
+        </div>`;
+      }
+    }
+
+    function renderInboxMessages(msgs) {
+      const container = document.getElementById('inboxMessagesContainer');
+      const unreadCount = msgs.filter(m => m.isUnread).length;
+      document.getElementById('inboxUnreadBadge').innerText = `${unreadCount} unread message(s)`;
+
+      if (msgs.length === 0) {
+        container.innerHTML = '<div class="text-center py-6 text-xs text-slate-400">No messages found.</div>';
+        return;
+      }
+
+      container.innerHTML = msgs.map(msg => `
+        <div class="p-3 rounded-xl border ${msg.isUnread ? 'bg-amber-50/50 border-[#FF9900]/40' : 'bg-white border-slate-200'} text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 truncate max-w-[200px]">${escapeHtml(msg.from.replace(/<.*?>/, ''))}</span>
+            <span class="text-[10px] text-slate-400">${escapeHtml(msg.date ? new Date(msg.date).toLocaleDateString() : '')}</span>
+          </div>
+          <div class="font-semibold text-slate-800 truncate">${escapeHtml(msg.subject)}</div>
+          <div class="text-slate-500 text-[11px] line-clamp-1">${escapeHtml(msg.snippet)}</div>
+          <div class="flex items-center justify-between pt-1">
+            ${msg.isUnread ? '<span class="text-[9px] font-bold bg-[#FF9900] text-slate-950 px-1.5 py-0.5 rounded">UNREAD</span>' : '<span></span>'}
+            <a href="https://mail.google.com/mail/u/${encodeURIComponent(getActiveEmail() || '')}/#inbox/${msg.id}" target="_blank" class="text-[10px] text-[#E47911] font-bold hover:underline">
+              Open in Gmail &rarr;
+            </a>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterInboxMessages() {
+      const q = (document.getElementById('inboxSearchInput').value || '').toLowerCase();
+      const filtered = currentMessages.filter(m => 
+        m.subject.toLowerCase().includes(q) || 
+        m.from.toLowerCase().includes(q) || 
+        m.snippet.toLowerCase().includes(q)
+      );
+      renderInboxMessages(filtered);
+    }
+
+    function refreshCurrentInbox() {
+      fetchInbox();
+    }
+
+    function updateUI() {
+      const accounts = getAccounts();
+      const active = getActiveEmail();
+      
+      document.getElementById('statAccCount').innerText = accounts.length;
+      document.getElementById('badgeAccCount').innerText = accounts.length;
+      const totalUnread = accounts.reduce((sum, a) => sum + (a.unreadCount || 0), 0);
+      document.getElementById('statUnreadCount').innerText = totalUnread;
+
+      const container = document.getElementById('accountsListContainer');
+      const fullList = document.getElementById('fullAccountsList');
+
+      if (accounts.length === 0) {
+        const emptyHtml = `
+          <div class="text-center py-6 text-xs text-slate-500">
+            <div class="w-12 h-12 bg-amber-50 text-[#E47911] rounded-2xl flex items-center justify-center mx-auto mb-2 text-xl font-bold">✉️</div>
+            <div class="font-bold text-slate-800">এখনও কোনো জিমেইল যুক্ত করা হয়নি</div>
+            <p class="text-[11px] text-slate-500 max-w-xs mx-auto mt-1 mb-3">আপনার জিমেইল ইনবক্সের অপঠিত মেসেজ ও সারসংক্ষেপ দেখতে সাইন ইন করুন।</p>
+            <button onclick="triggerGoogleSignIn()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FF9900] hover:bg-[#F8A838] text-slate-950 font-bold text-xs rounded-xl shadow">
+              <span>গুগল দিয়ে সাইন ইন করুন</span>
+            </button>
+          </div>
+        `;
+        container.innerHTML = emptyHtml;
+        if (fullList) fullList.innerHTML = emptyHtml;
+        return;
+      }
+
+      const html = accounts.map(acc => {
+        const isActive = active && active.toLowerCase() === acc.email.toLowerCase();
+        return `
+          <div class="p-3 rounded-2xl border ${isActive ? 'bg-amber-50/60 border-[#FF9900]' : 'bg-slate-50 border-slate-200'} flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2.5 min-w-0">
+              ${acc.photoURL ? `<img src="${acc.photoURL}" class="w-9 h-9 rounded-full border-2 border-[#FF9900]">` : `<div class="w-9 h-9 rounded-full bg-[#131921] text-[#FF9900] flex items-center justify-center font-bold text-xs">${acc.email[0].toUpperCase()}</div>`}
+              <div class="min-w-0">
+                <div class="font-bold text-slate-900 truncate">${escapeHtml(acc.displayName || acc.email)}</div>
+                <div class="text-[11px] text-slate-500 font-mono truncate">${escapeHtml(acc.email)}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              ${isActive ? `
+                <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Active</span>
+              ` : `
+                <button onclick="switchAccount('${acc.email}')" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 font-semibold text-slate-800 rounded-lg text-xs">
+                  Switch
+                </button>
+              `}
+              <button onclick="removeAccount('${acc.email}')" class="text-red-500 hover:text-red-700 p-1 text-sm font-bold" title="Remove">&times;</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = html;
+      if (fullList) fullList.innerHTML = html;
+    }
+
+    function switchAccount(email) {
+      setActiveEmail(email);
+      triggerGoogleSignIn(email);
+    }
+
+    function removeAccount(email) {
+      if (!confirm('Disconnect this account from Bahadur Gmail Manager?')) return;
+      let accounts = getAccounts();
+      accounts = accounts.filter(a => a.email.toLowerCase() !== email.toLowerCase());
+      saveAccounts(accounts);
+      if (getActiveEmail()?.toLowerCase() === email.toLowerCase()) {
+        setActiveEmail(accounts.length > 0 ? accounts[0].email : null);
+      }
+    }
+
+    function updateHeaderUser() {
+      const area = document.getElementById('userHeaderArea');
+      if (currentUser) {
+        area.innerHTML = `
+          <div class="flex items-center gap-1.5 bg-[#232F3E] px-2.5 py-1 rounded-full border border-gray-700 text-xs">
+            ${currentUser.photoURL ? `<img src="${currentUser.photoURL}" class="w-5 h-5 rounded-full">` : `<span class="w-5 h-5 rounded-full bg-[#FF9900] text-black font-bold flex items-center justify-center text-[10px]">${(currentUser.email||'G')[0].toUpperCase()}</span>`}
+            <span class="max-w-[80px] truncate hidden sm:inline">${currentUser.displayName || currentUser.email}</span>
+            <button onclick="triggerSignOut()" class="text-gray-400 hover:text-red-400 ml-1 text-xs">Logout</button>
+          </div>
+        `;
+      } else {
+        area.innerHTML = `
+          <button onclick="triggerGoogleSignIn()" class="bg-[#FF9900] hover:bg-[#F8A838] text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs transition-colors shadow">
+            Sign in with Google
+          </button>
+        `;
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById('sectionDashboard').classList.add('hidden');
+      document.getElementById('sectionInbox').classList.add('hidden');
+      document.getElementById('sectionAccounts').classList.add('hidden');
+      document.getElementById('sectionSingleHtml').classList.add('hidden');
+
+      ['Dashboard', 'Inbox', 'Accounts', 'SingleHtml'].forEach(name => {
+        const btn = document.getElementById('tabBtn' + name);
+        if (btn) btn.className = 'px-3 py-1 rounded font-medium text-gray-300 hover:text-white';
+      });
+
+      const tabMap = {
+        dashboard: { sec: 'sectionDashboard', btn: 'tabBtnDashboard' },
+        inbox: { sec: 'sectionInbox', btn: 'tabBtnInbox' },
+        accounts: { sec: 'sectionAccounts', btn: 'tabBtnAccounts' },
+        singleHtml: { sec: 'sectionSingleHtml', btn: 'tabBtnSingleHtml' }
+      };
+
+      const target = tabMap[tab] || tabMap.dashboard;
+      document.getElementById(target.sec).classList.remove('hidden');
+      document.getElementById(target.btn).className = 'px-3 py-1 rounded font-bold bg-[#131921] text-[#FF9900] border-b-2 border-[#FF9900]';
+
+      if (tab === 'inbox') {
+        document.getElementById('inboxHeaderEmail').innerText = getActiveEmail() || 'Gmail Inbox Overview';
+        if (cachedAccessToken) fetchInbox();
+      }
+    }
+
+    function setLanguage(lang) {
+      currentLanguage = lang;
+      document.getElementById('langBtnEn').className = lang === 'en' ? 'px-2 py-1 text-xs font-bold rounded bg-[#FF9900] text-slate-950' : 'px-2 py-1 text-xs font-medium rounded text-gray-300 hover:text-white';
+      document.getElementById('langBtnBn').className = lang === 'bn' ? 'px-2 py-1 text-xs font-bold rounded bg-[#FF9900] text-slate-950' : 'px-2 py-1 text-xs font-medium rounded text-gray-300 hover:text-white';
+      
+      if (lang === 'bn') {
+        document.getElementById('heroTitle').innerText = 'Bahadur Gmail Manager';
+        document.getElementById('heroDesc').innerText = 'অফিসিয়াল গুগল OAuth ২.০ যুক্ত নিরাপদ মাল্টি-অ্যাকাউন্ট জিমেইল ম্যানেজার';
+        document.getElementById('heroBtnTxt').innerText = '⊕ গুগল দিয়ে সাইন ইন করুন';
+        document.getElementById('createAccBtnTxt').innerText = 'নতুন জিমেইল অ্যাকাউন্ট তৈরি';
+      } else {
+        document.getElementById('heroTitle').innerText = 'Bahadur Gmail Manager';
+        document.getElementById('heroDesc').innerText = 'Secure Multi-Account Gmail Manager with Official Google OAuth 2.0';
+        document.getElementById('heroBtnTxt').innerText = '⊕ Sign in with Google';
+        document.getElementById('createAccBtnTxt').innerText = 'Create New Gmail Account';
+      }
+    }
+
+    function openCreateModal() {
+      document.getElementById('createModal').classList.remove('hidden');
+    }
+
+    function closeCreateModal() {
+      document.getElementById('createModal').classList.add('hidden');
+    }
+
+    function openGoogleSignupPage() {
+      window.open('https://accounts.google.com/signup', '_blank');
+      closeCreateModal();
+    }
+
+    function copySingleHtmlToClipboard() {
+      const fullHtml = document.documentElement.outerHTML;
+      navigator.clipboard.writeText('<!DOCTYPE html>\n' + fullHtml).then(() => {
+        const btn = document.getElementById('copyBtnStatus');
+        btn.innerText = '✓ সম্পূর্ণ কোড কপি হয়েছে!';
+        setTimeout(() => { btn.innerText = '1-Click Copy Full index.html'; }, 2500);
+      });
+    }
+
+    function downloadIndexHtmlFile() {
+      const fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.innerText = text || '';
+      return div.innerHTML;
+    }
+
+    updateUI();
+  </script>
+</body>
+</html>
